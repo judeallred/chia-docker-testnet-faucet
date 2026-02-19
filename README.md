@@ -129,6 +129,44 @@ To fully reset (destroys keys, wallet, and saved mnemonic):
 docker compose down -v
 ```
 
+## CI/CD
+
+Pushes to `main` and version tags (`v*`) automatically build multi-platform images (`linux/amd64` + `linux/arm64`) and push to both registries:
+
+- **GHCR**: `ghcr.io/<owner>/chia-testnet-faucet`
+- **Docker Hub**: `<username>/chia-testnet-faucet`
+
+### Tagging strategy
+
+| Trigger | Tags produced |
+|---------|---------------|
+| Push to `main` | `latest`, `<VERSION>`, `<short-sha>` |
+| Tag `v1.2.3` | `1.2.3`, `1.2`, `<short-sha>` |
+
+### Required secrets
+
+Set these in your GitHub repo under Settings > Secrets and variables > Actions:
+
+| Secret | Purpose |
+|--------|---------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+
+`GITHUB_TOKEN` is provided automatically and handles GHCR auth.
+
+### Releasing a new version
+
+```bash
+# Update the version
+echo "0.2.0" > VERSION
+git add VERSION
+git commit -m "Bump version to 0.2.0"
+git tag v0.2.0
+git push origin main --tags
+```
+
+CI will build and push `0.2.0`, `0.2`, and `latest` to both registries.
+
 ## Distribution
 
 ### Build locally
