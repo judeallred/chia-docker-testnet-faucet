@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="30">
+  <title>Chia Testnet Faucet</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e1e4ed;
+      --muted: #8b8fa3;
+      --accent: #5cb85c;
+      --warn: #d9534f;
+      --warn-bg: #2d1518;
+      --blue: #5bc0de;
+      --mono: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .card-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.25rem; }
+    .card-value { font-size: 1.5rem; font-weight: 600; font-family: var(--mono); }
+    .card-value.accent { color: var(--accent); }
+    .card-value.warn { color: var(--warn); }
+    .address-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .address-row { display: flex; align-items: center; gap: 0.75rem; }
+    .address-text {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      word-break: break-all;
+      flex: 1;
+      color: var(--blue);
+    }
+    .copy-btn {
+      background: var(--border);
+      color: var(--text);
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { background: #3a3d4a; }
+    .banner {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+    .banner.warn {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn);
+      color: #f0a0a0;
+    }
+    .banner.info {
+      background: #152030;
+      border: 1px solid #2a5080;
+      color: #80b0e0;
+    }
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+    }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge.confirmed { background: #1a3a1a; color: #5cb85c; }
+    .badge.pending { background: #3a3520; color: #d4a340; }
+    .badge.sent { background: #1a3a1a; color: #5cb85c; }
+    .badge.failed { background: #2d1518; color: #d9534f; }
+    .badge.incoming { background: #152030; color: #5bc0de; }
+    .badge.outgoing { background: #2a2030; color: #b08cd0; }
+    .addr-short { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; }
+    .usage {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .usage code {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--blue);
+    }
+    .empty { color: var(--muted); text-align: center; padding: 2rem; }
+    .footer { color: var(--muted); font-size: 0.75rem; margin-top: 2rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Chia Testnet Faucet</h1>
+  <p class="subtitle">Dispensing {{ send_amount_txch }} TXCH per request &middot; Auto-refreshes every 30s</p>
+
+  {% if not wallet_available %}
+  <div class="banner warn">
+    Wallet is not available. The Chia wallet service may still be starting or syncing.
+  </div>
+  {% endif %}
+
+  {% if low_balance and wallet_available %}
+  <div class="banner warn">
+    Balance is below {{ low_balance_threshold_txch }} TXCH. The faucet cannot fulfill requests.
+    Please send TXCH to the vault address below.
+  </div>
+  {% endif %}
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">Balance</div>
+      <div class="card-value {% if low_balance %}warn{% else %}accent{% endif %}">{{ balance_txch }} TXCH</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Sync Status</div>
+      <div class="card-value {% if synced %}accent{% else %}warn{% endif %}">
+        {% if synced %}Synced{% elif syncing %}Syncing...{% else %}Not synced{% endif %}
+      </div>
+      <div style="color: var(--muted); font-size: 0.75rem; margin-top: 0.25rem;">Height: {{ height }}</div>
+    </div>
+  </div>
+
+  <div class="address-box">
+    <div class="card-label">Vault Address</div>
+    <div class="address-row">
+      <span class="address-text" id="vault-addr">{{ vault_address }}</span>
+      <button class="copy-btn" onclick="copyAddr()">Copy</button>
+    </div>
+  </div>
+
+  <div class="usage">
+    <div class="card-label">Usage</div>
+    <p style="margin-top: 0.5rem;">
+      <code>curl http://localhost:{{ faucet_port }}/send?address=txch1...</code>
+    </p>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="section-title">Faucet Sends</div>
+    {% if faucet_sends %}
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>To</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in faucet_sends %}
+        <tr>
+          <td>{{ s.time }}</td>
+          <td><span class="addr-short" title="{{ s.address }}">{{ s.address }}</span></td>
+          <td>{{ s.amount_txch }} TXCH</td>
+          <td>
+            <span class="badge {{ s.status }}">{{ s.status }}</span>
+            {% if s.error %}<span style="color: var(--warn); font-size: 0.65rem;"> {{ s.error }}</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No faucet sends yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="section-title">Wallet Transaction History</div>
+    {% if transactions %}
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Type</th>
+          <th>To</th>
+          <th>Amount</th>
+          <th>Fee</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
+        <tr>
+          <td>{{ tx.time }}</td>
+          <td><span class="badge {{ tx.type }}">{{ tx.type }}</span></td>
+          <td><span class="addr-short" title="{{ tx.address }}">{{ tx.address }}</span></td>
+          <td>{{ tx.amount_txch }} TXCH</td>
+          <td>{{ tx.fee_txch }}</td>
+          <td><span class="badge {{ tx.status }}">{{ tx.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No transactions yet.</p>
+    {% endif %}
+  </div>
+
+  <p class="footer">Auto-refreshes every 30 seconds</p>
+
+  <script>
+    function copyAddr() {
+      const addr = document.getElementById("vault-addr").textContent;
+      navigator.clipboard.writeText(addr).then(() => {
+        const btn = document.querySelector(".copy-btn");
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy", 2000);
+      });
+    }
+  </script>
+</body>
+</html>
