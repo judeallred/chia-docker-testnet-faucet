@@ -1,0 +1,20 @@
+services:
+  faucet:
+    build: .
+    container_name: chia-faucet
+    restart: unless-stopped
+    ports:
+      - "${FAUCET_PORT:-9090}:${FAUCET_PORT:-9090}"
+    volumes:
+      - chia_data:/root/.chia
+      - chia_keys:/root/.chia_keys
+    environment:
+      - FAUCET_PORT=${FAUCET_PORT:-9090}
+      - SEND_AMOUNT_MOJOS=${SEND_AMOUNT_MOJOS:-1000000000}
+      - LOW_BALANCE_MOJOS=${LOW_BALANCE_MOJOS:-10000000000}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_DELAY_BASE=${RETRY_DELAY_BASE:-2}
+
+volumes:
+  chia_data:
+  chia_keys:
