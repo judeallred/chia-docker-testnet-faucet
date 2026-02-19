@@ -9,6 +9,7 @@ services:
       - chia_data:/root/.chia
       - chia_keys:/root/.chia_keys
     environment:
+      - CHIA_MNEMONIC=${CHIA_MNEMONIC:-}
       - FAUCET_PORT=${FAUCET_PORT:-9090}
       - SEND_AMOUNT_MOJOS=${SEND_AMOUNT_MOJOS:-1000000000}
       - LOW_BALANCE_MOJOS=${LOW_BALANCE_MOJOS:-10000000000}

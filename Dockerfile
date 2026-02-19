@@ -9,6 +9,7 @@ COPY src/ src/
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
+ENV CHIA_MNEMONIC=""
 ENV FAUCET_PORT=9090
 EXPOSE 9090
 

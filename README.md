@@ -10,7 +10,7 @@ docker compose up -d --build
 
 The faucet will:
 1. Initialize Chia and configure for testnet11
-2. Generate a key pair on first run (check logs for the mnemonic backup)
+2. Import or generate a wallet key (see Key Management below)
 3. Start a lite wallet and begin syncing
 4. Launch the API on port 9090
 
@@ -33,17 +33,52 @@ curl http://localhost:9090/address
 
 **Dashboard:** Open http://localhost:9090 in a browser to see balance, faucet address, and transaction history.
 
-## First-Run Setup
+## Key Management
 
-On first launch, check the container logs for the generated mnemonic:
+The faucet needs a Chia wallet key. There are two ways to provide one:
+
+### Option 1: Bring your own key
+
+Set the `CHIA_MNEMONIC` environment variable to your 24-word mnemonic phrase before first launch:
 
 ```bash
-docker compose logs faucet
+CHIA_MNEMONIC="word1 word2 word3 ... word24" docker compose up -d --build
 ```
 
-Look for the `BACK UP THE MNEMONIC ABOVE!` banner. Save this mnemonic securely -- it's the only way to recover the faucet's wallet.
+Or add it to a `.env` file alongside `docker-compose.yml`:
 
-The faucet address will be printed in the logs and is also available at `/address` or on the dashboard. Send TXCH to this address to fund the faucet.
+```
+CHIA_MNEMONIC=word1 word2 word3 ... word24
+```
+
+The mnemonic is imported on first boot. It is written to a temp file for import and then deleted -- it does not persist in the container filesystem. However, it is visible via `docker inspect` and the process environment. For testnet use this is fine.
+
+### Option 2: Auto-generate
+
+Leave `CHIA_MNEMONIC` unset and the faucet will generate a new key on first boot:
+
+```bash
+docker compose up -d --build
+docker compose logs faucet   # look for the mnemonic
+```
+
+The generated mnemonic is:
+- Printed to the container logs (one-time, for backup)
+- Saved to `/root/.chia/faucet_mnemonic.txt` inside the persistent `chia_data` volume
+
+### Key persistence
+
+Keys are persisted across container restarts through three layers (checked in order on each boot):
+
+1. **Keyring** (`chia_keys` volume) -- primary storage, survives normal down/up cycles
+2. **Saved mnemonic file** (`chia_data` volume) -- auto-created on key generation; allows recovery if the keyring volume is lost
+3. **`CHIA_MNEMONIC` env var** -- used on first boot to seed the keyring
+
+Only `docker compose down -v` (which destroys both volumes) loses the key. In that case, re-provide `CHIA_MNEMONIC` or a new key will be generated.
+
+### Funding the faucet
+
+The faucet address is available at `/address`, on the dashboard, and in the startup logs. Send TXCH to this address to fund the faucet.
 
 You can get testnet TXCH from:
 - https://testnet11-faucet.chia.net/
@@ -55,6 +90,7 @@ All settings are configurable via environment variables (set in `docker-compose.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `CHIA_MNEMONIC` | *(empty)* | 24-word mnemonic to import on first boot |
 | `FAUCET_PORT` | `9090` | Port the API listens on |
 | `SEND_AMOUNT_MOJOS` | `1000000000` | Amount per send (0.001 TXCH) |
 | `LOW_BALANCE_MOJOS` | `10000000000` | Low balance threshold (0.01 TXCH) |
@@ -78,9 +114,9 @@ All settings are configurable via environment variables (set in `docker-compose.
 
 ## Persistence
 
-Docker volumes `chia_data` and `chia_keys` persist the wallet database, blockchain state, and keyring across container restarts. Your keys and wallet state survive `docker compose down` and `docker compose up`.
+Docker volumes `chia_data` and `chia_keys` persist the wallet database, blockchain state, keyring, and saved mnemonic across container restarts. Your keys and wallet state survive `docker compose down` and `docker compose up`.
 
-To fully reset (destroys keys and wallet):
+To fully reset (destroys keys, wallet, and saved mnemonic):
 ```bash
 docker compose down -v
 ```
