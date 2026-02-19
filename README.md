@@ -1,6 +1,14 @@
 # Chia Testnet Faucet
 
-A self-contained, Dockerized faucet service for Chia testnet11. Runs a lite wallet, manages its own keys, and dispenses 0.001 TXCH per request via a simple HTTP GET.
+A self-contained, Dockerized faucet for Chia testnet11. Dispenses TXCH via a simple HTTP GET to seed local e2e tests and other development workflows.
+
+## Purpose
+
+This faucet exists to make local development easier. When you're running integration tests, e2e suites, or experimenting with Chia tooling, you often need a quick way to fund throwaway wallets with testnet coins. This service sits on your local network, accepts a GET request with a target address, and sends TXCH -- no friction, no waiting.
+
+**This is deliberately insecure.** There is no captcha, no rate limiting, no authentication, and no abuse prevention of any kind. It is intended exclusively for personal, testnet-only use. Do not expose it to the public internet.
+
+**Always use throwaway private keys.** The faucet is designed for convenience, not robustness. The mnemonic is stored in plaintext in a Docker volume and may appear in container logs. Treat the faucet wallet as disposable -- fund it with small amounts of TXCH and don't reuse its key for anything else.
 
 ## Quick Start
 
