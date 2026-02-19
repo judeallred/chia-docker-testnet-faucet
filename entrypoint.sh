@@ -22,24 +22,24 @@ elif [ -n "${CHIA_MNEMONIC:-}" ]; then
     echo "Importing key from CHIA_MNEMONIC environment variable..."
     TMPFILE=$(mktemp)
     echo "$CHIA_MNEMONIC" > "$TMPFILE"
-    chia keys add -f "$TMPFILE"
+    chia keys add -f "$TMPFILE" -l ""
     rm -f "$TMPFILE"
     echo "Key imported successfully."
 elif [ -f "$SAVED_MNEMONIC" ]; then
     echo "Re-importing key from saved mnemonic file..."
-    chia keys add -f "$SAVED_MNEMONIC"
+    chia keys add -f "$SAVED_MNEMONIC" -l ""
     echo "Key re-imported successfully."
 else
     echo "============================================"
     echo "  No keys found. Generating a new key..."
     echo "============================================"
-    chia keys generate | tee /tmp/chia_key_output.txt
-    grep -A1 "mnemonic" /tmp/chia_key_output.txt | tail -1 | xargs > "$SAVED_MNEMONIC"
+    chia keys generate -l ""
+    chia keys show --show-mnemonic-seed | grep -A1 "Mnemonic" | tail -1 | sed 's/^ *//' > "$SAVED_MNEMONIC"
     chmod 600 "$SAVED_MNEMONIC"
-    rm -f /tmp/chia_key_output.txt
     echo ""
     echo "============================================"
-    echo "  BACK UP THE MNEMONIC ABOVE!"
+    echo "  BACK UP YOUR MNEMONIC!"
+    echo "  Run: chia keys show --show-mnemonic-seed"
     echo "  Mnemonic also saved to $SAVED_MNEMONIC"
     echo "  in the persistent chia_data volume."
     echo "============================================"
