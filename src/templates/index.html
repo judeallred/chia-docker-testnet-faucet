@@ -146,7 +146,7 @@
   {% if low_balance and wallet_available %}
   <div class="banner warn">
     Balance is below {{ low_balance_threshold_txch }} TXCH. The faucet cannot fulfill requests.
-    Please send TXCH to the vault address below.
+    Please send TXCH to the faucet address below.
   </div>
   {% endif %}
 
@@ -165,9 +165,9 @@
   </div>
 
   <div class="address-box">
-    <div class="card-label">Vault Address</div>
+    <div class="card-label">Faucet Address</div>
     <div class="address-row">
-      <span class="address-text" id="vault-addr">{{ vault_address }}</span>
+      <span class="address-text" id="faucet-addr">{{ faucet_address }}</span>
       <button class="copy-btn" onclick="copyAddr()">Copy</button>
     </div>
   </div>
@@ -246,7 +246,7 @@
 
   <script>
     function copyAddr() {
-      const addr = document.getElementById("vault-addr").textContent;
+      const addr = document.getElementById("faucet-addr").textContent;
       navigator.clipboard.writeText(addr).then(() => {
         const btn = document.querySelector(".copy-btn");
         btn.textContent = "Copied!";

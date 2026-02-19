@@ -26,12 +26,12 @@ curl http://localhost:9090/send?address=txch1...
 curl http://localhost:9090/status
 ```
 
-**Get the vault address (to fund the faucet):**
+**Get the faucet address (to fund the faucet):**
 ```bash
 curl http://localhost:9090/address
 ```
 
-**Dashboard:** Open http://localhost:9090 in a browser to see balance, vault address, and transaction history.
+**Dashboard:** Open http://localhost:9090 in a browser to see balance, faucet address, and transaction history.
 
 ## First-Run Setup
 
@@ -43,7 +43,7 @@ docker compose logs faucet
 
 Look for the `BACK UP THE MNEMONIC ABOVE!` banner. Save this mnemonic securely -- it's the only way to recover the faucet's wallet.
 
-The vault address will be printed in the logs and is also available at `/address` or on the dashboard. Send TXCH to this address to fund the faucet.
+The faucet address will be printed in the logs and is also available at `/address` or on the dashboard. Send TXCH to this address to fund the faucet.
 
 You can get testnet TXCH from:
 - https://testnet11-faucet.chia.net/
@@ -65,16 +65,16 @@ All settings are configurable via environment variables (set in `docker-compose.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | HTML dashboard with balance, vault address, transaction history |
+| `/` | GET | HTML dashboard with balance, faucet address, transaction history |
 | `/send?address=txch1...` | GET | Send 0.001 TXCH to the address |
 | `/status` | GET | JSON wallet status (balance, sync, height) |
-| `/address` | GET | JSON vault address |
+| `/address` | GET | JSON faucet address |
 
 ### Error Responses
 
 - **400** -- Invalid address (must start with `txch1`)
 - **500** -- Send failed after all retries
-- **503** -- Wallet unavailable or balance too low (response includes vault address for funding)
+- **503** -- Wallet unavailable or balance too low (response includes faucet address for funding)
 
 ## Persistence
 

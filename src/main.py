@@ -53,7 +53,7 @@ send_history: deque[SendRecord] = deque(maxlen=SEND_HISTORY_MAX)
 async def lifespan(app: FastAPI):
     await wallet.wait_for_ready()
     addr = await wallet.get_next_address(new_address=False)
-    logger.info("Faucet vault address: %s", addr)
+    logger.info("Faucet address: %s", addr)
     yield
     await wallet.close()
 
@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Chia Testnet Faucet", lifespan=lifespan)
 
 
-async def _get_vault_address() -> str:
+async def _get_faucet_address() -> str:
     return await wallet.get_next_address(new_address=False)
 
 
@@ -104,9 +104,9 @@ async def send(address: str) -> JSONResponse:
         )
 
     if balance < SEND_AMOUNT_MOJOS:
-        vault_address = await _get_vault_address()
+        faucet_address = await _get_faucet_address()
         logger.warning(
-            "Balance too low (%s mojos). Vault address: %s", balance, vault_address
+            "Balance too low (%s mojos). Faucet address: %s", balance, faucet_address
         )
         return JSONResponse(
             status_code=503,
@@ -114,8 +114,8 @@ async def send(address: str) -> JSONResponse:
                 "error": "insufficient_balance",
                 "balance_mojos": balance,
                 "balance_txch": mojos_to_txch(balance),
-                "vault_address": vault_address,
-                "message": "Faucet balance too low. Please send TXCH to the vault address.",
+                "faucet_address": faucet_address,
+                "message": "Faucet balance too low. Please send TXCH to the faucet address.",
             },
         )
 
@@ -162,9 +162,9 @@ async def status() -> JSONResponse:
         balance_info = await wallet.get_wallet_balance()
         sync_info = await wallet.get_sync_status()
         height = await wallet.get_height_info()
-        vault_address = await _get_vault_address()
+        faucet_address = await _get_faucet_address()
         return JSONResponse(content={
-            "vault_address": vault_address,
+            "faucet_address": faucet_address,
             "confirmed_balance_mojos": balance_info.get("confirmed_wallet_balance", 0),
             "confirmed_balance_txch": mojos_to_txch(balance_info.get("confirmed_wallet_balance", 0)),
             "pending_balance_mojos": balance_info.get("unconfirmed_wallet_balance", 0),
@@ -186,8 +186,8 @@ async def status() -> JSONResponse:
 @app.get("/address")
 async def address() -> JSONResponse:
     try:
-        vault_address = await _get_vault_address()
-        return JSONResponse(content={"vault_address": vault_address})
+        faucet_address = await _get_faucet_address()
+        return JSONResponse(content={"faucet_address": faucet_address})
     except Exception as exc:
         return JSONResponse(
             status_code=503,
@@ -201,7 +201,7 @@ async def landing_page(request: Request) -> HTMLResponse:
         balance_info = await wallet.get_wallet_balance()
         sync_info = await wallet.get_sync_status()
         height = await wallet.get_height_info()
-        vault_address = await _get_vault_address()
+        faucet_address = await _get_faucet_address()
         transactions = await wallet.get_transactions()
 
         confirmed = balance_info.get("confirmed_wallet_balance", 0)
@@ -227,7 +227,7 @@ async def landing_page(request: Request) -> HTMLResponse:
         wallet_available = False
         confirmed = 0
         low_balance = True
-        vault_address = "unavailable"
+        faucet_address = "unavailable"
         sync_info = {}
         height = 0
         tx_rows = []
@@ -247,7 +247,7 @@ async def landing_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {
         "request": request,
         "wallet_available": wallet_available,
-        "vault_address": vault_address,
+        "faucet_address": faucet_address,
         "balance_txch": mojos_to_txch(confirmed),
         "balance_mojos": confirmed,
         "low_balance": low_balance,
