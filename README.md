@@ -129,6 +129,112 @@ To fully reset (destroys keys, wallet, and saved mnemonic):
 docker compose down -v
 ```
 
+## Distribution
+
+### Build locally
+
+```bash
+make build-local
+```
+
+This produces `chia-testnet-faucet:latest` and `chia-testnet-faucet:0.1.0` on your local Docker.
+
+### Export as a tarball
+
+```bash
+make save
+```
+
+Produces `chia-testnet-faucet-0.1.0.tar.gz`. Share this file -- the recipient loads it with:
+
+```bash
+make load FILE=chia-testnet-faucet-0.1.0.tar.gz
+# or: docker load < chia-testnet-faucet-0.1.0.tar.gz
+```
+
+### Push to a registry
+
+```bash
+make push REGISTRY=ghcr.io/yourname
+```
+
+This tags and pushes `ghcr.io/yourname/chia-testnet-faucet:0.1.0` and `:latest`. You need to `docker login` to the registry first.
+
+### Multi-platform build
+
+```bash
+make build REGISTRY=ghcr.io/yourname
+```
+
+Builds for `linux/amd64` and `linux/arm64` and pushes directly to the registry (multi-platform builds require a registry or `--load` with a single platform).
+
+### All make targets
+
+```bash
+make help
+```
+
+## Using the Faucet from Another Project
+
+### Option 1: Add to your project's docker-compose
+
+Copy `docker-compose.standalone.yml` into your project, or reference the image directly. If the image was built locally or loaded from a tarball:
+
+```yaml
+services:
+  your-app:
+    build: .
+    # ...
+
+  faucet:
+    image: chia-testnet-faucet:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - faucet_data:/root/.chia
+      - faucet_keys:/root/.chia_keys
+    environment:
+      - CHIA_MNEMONIC=${FAUCET_MNEMONIC:-}
+
+volumes:
+  faucet_data:
+  faucet_keys:
+```
+
+If published to a registry, replace the image line:
+
+```yaml
+    image: ghcr.io/yourname/chia-testnet-faucet:latest
+```
+
+Then from your app or tests, the faucet is at `http://faucet:9090` (container-to-container) or `http://localhost:9090` (from the host).
+
+### Option 2: Run standalone, call from anywhere
+
+Leave the faucet running as a background service:
+
+```bash
+cd /path/to/faucet
+docker compose up -d
+```
+
+From any project on the same machine, just make HTTP calls:
+
+```bash
+curl "http://localhost:9090/send?address=txch1..."
+```
+
+Or in your test code:
+
+```python
+import requests
+
+def fund_wallet(address: str) -> dict:
+    resp = requests.get(f"http://localhost:9090/send?address={address}")
+    resp.raise_for_status()
+    return resp.json()
+```
+
 ## Architecture
 
 The container runs two processes:

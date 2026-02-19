@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+*.tar.gz
+chia_data/
+chia_keys/
+README.md
+Makefile
+VERSION
+docker-compose.standalone.yml

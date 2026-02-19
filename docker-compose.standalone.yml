@@ -1,0 +1,32 @@
+# Drop-in faucet service for use in other projects.
+#
+# Copy this file into your project, or reference it with:
+#   docker compose -f docker-compose.yml -f /path/to/docker-compose.standalone.yml up -d
+#
+# If using a published image, set FAUCET_IMAGE in your .env:
+#   FAUCET_IMAGE=ghcr.io/yourname/chia-testnet-faucet:latest
+#
+# If the image was loaded from a tarball or built locally:
+#   FAUCET_IMAGE=chia-testnet-faucet:latest
+
+services:
+  faucet:
+    image: ${FAUCET_IMAGE:-chia-testnet-faucet:latest}
+    container_name: chia-faucet
+    restart: unless-stopped
+    ports:
+      - "${FAUCET_PORT:-9090}:${FAUCET_PORT:-9090}"
+    volumes:
+      - faucet_data:/root/.chia
+      - faucet_keys:/root/.chia_keys
+    environment:
+      - CHIA_MNEMONIC=${CHIA_MNEMONIC:-}
+      - FAUCET_PORT=${FAUCET_PORT:-9090}
+      - SEND_AMOUNT_MOJOS=${SEND_AMOUNT_MOJOS:-1000000000}
+      - LOW_BALANCE_MOJOS=${LOW_BALANCE_MOJOS:-10000000000}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_DELAY_BASE=${RETRY_DELAY_BASE:-2}
+
+volumes:
+  faucet_data:
+  faucet_keys:

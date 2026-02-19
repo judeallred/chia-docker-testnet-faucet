@@ -1,5 +1,6 @@
 services:
   faucet:
+    image: chia-testnet-faucet:latest
     build: .
     container_name: chia-faucet
     restart: unless-stopped
